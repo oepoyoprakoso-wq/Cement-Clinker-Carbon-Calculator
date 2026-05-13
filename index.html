@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CO₂ Calculator + Simulasi CBAM Australia</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+  min-height: 100vh;
+}
+
+/* ── TOP HEADER ── */
+.app-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 50%, #2563eb 100%);
+  padding: 22px 32px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+.app-header-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 20px; padding: 4px 12px; font-size: 11px;
+  color: #dbeafe; font-weight: 600; letter-spacing: 0.05em;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.app-header h1 { font-size: 24px; font-weight: 700; color: #fff; line-height: 1.2; }
+.app-header h1 span { color: #93c5fd; }
+.app-header p { font-size: 12px; color: #bfdbfe; margin-top: 5px; }
+.app-header-meta {
+  margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+}
+.badge-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 16px; padding: 4px 12px; font-size: 11px; font-weight: 600;
+}
+.badge-warn { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: #fef3c7; }
+.badge-info { background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.2); color: #dbeafe; }
+
+/* ── FLOW CONNECTOR ── */
+.flow-connector {
+  background: #eff6ff;
+  border-bottom: 2px solid #bfdbfe;
+  border-top: 2px solid #bfdbfe;
+  padding: 10px 32px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.flow-step {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 600; color: #1d4ed8;
+}
+.flow-dot {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: #2563eb; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.flow-arrow { color: #93c5fd; font-size: 18px; }
+.flow-auto-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #dcfce7; border: 1px solid #86efac;
+  border-radius: 20px; padding: 3px 10px;
+  font-size: 11px; font-weight: 600; color: #15803d;
+}
+.flow-auto-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: #16a34a;
+  animation: blink-green 1.2s ease-in-out infinite;
+}
+@keyframes blink-green { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── TWO PANEL LAYOUT ── */
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: calc(100vh - 130px);
+}
+@media (max-width: 900px) {
+  .panels { grid-template-columns: 1fr; }
+}
+
+.panel {
+  padding: 20px 24px;
+  border-right: 2px solid #e2e8f0;
+  overflow-y: auto;
+}
+.panel:last-child { border-right: none; }
+
+.panel-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; padding: 6px 12px; border-radius: 20px;
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 16px;
+}
+.panel-label.calc { background: #f3e8ff; color: #7c3aed; border: 1px solid #d8b4fe; }
+.panel-label.cbam { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+/* ── CALCULATOR STYLES (from index11) ── */
+.section-title {
+  font-size: 15px; font-weight: 600; color: #333;
+  margin-bottom: 16px; padding-bottom: 8px;
+  border-bottom: 2px solid #7c3aed;
+}
+.form-section { margin-bottom: 24px; }
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px; margin-bottom: 14px;
+}
+.form-group { display: flex; flex-direction: column; }
+label {
+  font-weight: 600; color: #333; margin-bottom: 6px; font-size: 13px;
+}
+.label-with-unit { display: flex; justify-content: space-between; align-items: baseline; }
+.unit { font-size: 11px; color: #999; font-weight: 400; }
+input[type="number"] {
+  padding: 9px 11px; border: 1px solid #ddd; border-radius: 6px;
+  font-size: 13px; transition: border-color 0.3s; width: 100%;
+}
+input[type="number"]:focus {
+  outline: none; border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+}
+input[type="number"].error { border-color: #e74c3c; }
+.error-message { color: #e74c3c; font-size: 12px; margin-top: 5px; display: none; }
+.error-message.show { display: block; }
+.info-text { font-size: 11px; color: #666; margin-top: 4px; font-style: italic; }
+
+.button-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+.btn-secondary { background: #95a5a6; color: white; }
+.btn-secondary:hover { background: #7f8c8d; transform: translateY(-1px); }
+.btn-toggle {
+  padding: 7px 14px; background: #ecf0f1; color: #333;
+  border: 2px solid #bdc3c7; border-radius: 6px;
+  cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.3s;
+}
+.btn-toggle.active { background: #7c3aed; color: white; border-color: #7c3aed; }
+.btn-toggle.manual-active { background: #e67e22; color: white; border-color: #e67e22; }
+.btn-toggle:hover { border-color: #7c3aed; }
+
+.manual-calf-box {
+  display: none; background: #fff8f0; border: 2px solid #e67e22;
+  border-radius: 8px; padding: 14px 18px; margin-top: 10px;
+}
+.manual-calf-box.show { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.manual-calf-box label { color: #e67e22; margin: 0; font-size: 13px; white-space: nowrap; }
+.manual-calf-box input { max-width: 160px; border-color: #e67e22; }
+.manual-calf-box input:focus { border-color: #e67e22; box-shadow: 0 0 0 3px rgba(230,126,34,0.15); }
+.manual-calf-preview { font-size: 12px; color: #e67e22; font-weight: 600; }
+
+.calf-preview-inline { font-size: 12px; color: #555; margin-top: 5px; font-style: italic; }
+.calf-preview-inline span { font-weight: 700; color: #7c3aed; }
+
+.scope2-toggle {
+  display: flex; align-items: center; gap: 12px;
+  margin: 16px 0; padding: 12px; background: #ecf0f1; border-radius: 6px;
+}
+.scope2-toggle label { margin: 0; font-size: 13px; }
+.scope2-inputs { display: none; }
+.scope2-inputs.show { display: block; }
+
+.error-box {
+  background: #fadbd8; border-left: 4px solid #e74c3c;
+  padding: 12px; border-radius: 6px; color: #c0392b;
+  margin-bottom: 16px; display: none; font-size: 13px;
+}
+.error-box.show { display: block; }
+
+/* Results */
+.results-section {
+  background: #f8f9fa; border-radius: 8px; padding: 18px; margin-top: 20px;
+}
+.results-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;
+}
+.result-box {
+  background: white; border-left: 4px solid #7c3aed;
+  padding: 12px; border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07); transition: opacity 0.2s;
+}
+.result-box.stale { opacity: 0.45; }
+.result-label { font-size: 11px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.result-value { font-size: 22px; font-weight: 700; color: #7c3aed; }
+.result-unit { font-size: 11px; color: #999; margin-top: 3px; }
+.live-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 700; color: #27ae60;
+  background: #eafaf1; border: 1px solid #27ae60;
+  border-radius: 20px; padding: 2px 8px; margin-left: 10px; vertical-align: middle;
+}
+.live-dot { width: 6px; height: 6px; background: #27ae60; border-radius: 50%; animation: blink 1.2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.copy-btn {
+  background: #27ae60; color: white; padding: 8px 12px;
+  border: none; border-radius: 4px; font-size: 12px;
+  cursor: pointer; transition: all 0.3s;
+}
+.copy-btn:hover { background: #229954; }
+.copy-btn.copied { background: #16a085; }
+
+.benchmark-table { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #e0e0e0; width: 100%; }
+.benchmark-title { font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.benchmark-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid #f5f5f5; gap: 5px; }
+.benchmark-row:last-child { border-bottom: none; }
+.benchmark-name { font-size: 10px; color: #555; line-height: 1.3; flex: 1; }
+.benchmark-values { display: flex; gap: 4px; flex-shrink: 0; }
+.bv-chip { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; white-space: nowrap; }
+.bv-chip.above { background: #fdecea; color: #c0392b; }
+.bv-chip.above::before { content: '⚠️ '; animation: blink-warn 0.9s ease-in-out infinite; display: inline-block; }
+@keyframes blink-warn { 0%,100%{opacity:1; transform:scale(1)} 50%{opacity:0.2; transform:scale(0.85)} }
+.bv-chip.below { background: #eafaf1; color: #1e8449; }
+.bv-chip.neutral { background: #f0f0f0; color: #555; }
+.bv-year { font-size: 9px; font-weight: 400; opacity: 0.75; }
+
+/* ── AUTO-FEED INDICATOR ── */
+.auto-feed-notice {
+  background: #f0fdf4; border: 1px solid #86efac;
+  border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;
+  font-size: 12px; color: #15803d; display: flex; align-items: center; gap: 8px;
+}
+.auto-feed-notice.inactive { background: #fefce8; border-color: #fde047; color: #854d0e; }
+.auto-feed-value { font-weight: 700; font-size: 14px; }
+
+/* ── CBAM STYLES (from index.html) ── */
+.formula-box {
+  background: #fff; border: 1px solid #e2e8f0;
+  border-left: 3px solid #2563eb; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.formula-box h3 { font-size: 11px; color: #2563eb; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; font-weight: 600; }
+.formula-main { font-size: 13px; color: #1e293b; font-family: 'Courier New', monospace; line-height: 1.8; }
+.formula-main .var { color: #b45309; }
+.formula-main .op { color: #7c3aed; }
+.formula-note { font-size: 11px; color: #64748b; margin-top: 6px; }
+
+.cbam-section-title { font-size: 15px; font-weight: 600; color: #1e40af; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #2563eb; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+@media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.card-title { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; margin-bottom: 12px; }
+.ctrl-row { display: flex; flex-direction: column; gap: 12px; }
+.ctrl-item { display: flex; flex-direction: column; gap: 4px; }
+.ctrl-label { font-size: 12px; color: #475569; font-weight: 500; }
+.input-field {
+  width: 100%; background: #f8fafc; color: #1e293b;
+  border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 11px;
+  font-size: 13px; font-weight: 600; transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+}
+.input-field:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); background: #fff; }
+.input-field.auto-filled { background: #f0fdf4; border-color: #86efac; color: #15803d; }
+.input-unit { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+select {
+  width: 100%; background: #f8fafc; color: #1e293b;
+  border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 11px;
+  font-size: 13px; cursor: pointer; outline: none; transition: border-color 0.2s;
+}
+select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 18px; }
+@media (max-width: 700px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
+
+.metric-card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.metric-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
+.metric-value { font-size: 20px; font-weight: 700; color: #1e293b; line-height: 1.1; }
+.metric-sub { font-size: 11px; color: #94a3b8; }
+.metric-card.highlight { border-color: #2563eb; background: #eff6ff; }
+.metric-card.highlight .metric-value { color: #1d4ed8; }
+.metric-card.warn { border-color: #d97706; background: #fffbeb; }
+.metric-card.warn .metric-value { color: #b45309; }
+
+.step-formula {
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 12px 14px; margin-bottom: 10px; font-family: 'Courier New', monospace;
+  font-size: 12px; line-height: 1.9;
+}
+.step-formula .comment { color: #94a3b8; font-family: system-ui; font-size: 10px; }
+.step-num { color: #7c3aed; }
+.step-eq { color: #1e293b; }
+.step-val { color: #059669; font-weight: 600; }
+.step-label { color: #b45309; }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 14px; border-bottom: 1px solid #e2e8f0; }
+.tab-btn {
+  padding: 7px 14px; font-size: 12px; font-weight: 500; color: #64748b;
+  background: none; border: none; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.2s; border-radius: 6px 6px 0 0;
+}
+.tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+.tab-btn:hover:not(.active) { color: #475569; background: #f1f5f9; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.tag-blue { background: rgba(37,99,235,0.1); color: #1d4ed8; }
+.tag-amber { background: rgba(217,119,6,0.1); color: #b45309; }
+.tag-green { background: rgba(5,150,105,0.1); color: #065f46; }
+.tag-red { background: rgba(239,68,68,0.1); color: #b91c1c; }
+</style>
+</head>
+<body>
+
+<!-- TOP HEADER -->
+<div class="app-header">
+  <div class="app-header-badge">🏭 Integrated CO₂ & CBAM Tool</div>
+  <h1>CO₂ Calculator <span>→ Simulasi CBAM Australia</span></h1>
+  <p>Hasil Gross CO₂ dari Kalkulator otomatis digunakan sebagai Emisi Intensitas Impor di Simulasi CBAM</p>
+  <div class="app-header-meta">
+    <span class="badge-pill badge-warn">⚠ Simulasi internal — bukan dokumen resmi atau legal</span>
+    <span class="badge-pill badge-info">✉ oepoyo.prakoso@gmail.com</span>
+  </div>
+</div>
+
+<!-- FLOW CONNECTOR -->
+<div class="flow-connector">
+  <div class="flow-step">
+    <div class="flow-dot">1</div>
+    <span>Isi Parameter CO₂ Calculator (kiri)</span>
+  </div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step">
+    <div class="flow-dot" style="background:#059669;">⟳</div>
+    <span>Gross CO₂ otomatis terisi di CBAM</span>
+  </div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step">
+    <div class="flow-dot" style="background:#d97706;">2</div>
+    <span>Atur parameter CBAM & lihat hasil (kanan)</span>
+  </div>
+  <span style="margin-left:auto;">
+    <span class="flow-auto-badge"><span class="flow-auto-dot"></span>Auto-Feed Aktif</span>
+  </span>
+</div>
+
+<!-- TWO PANELS -->
+<div class="panels">
+
+  <!-- ═══════════════════════════════════════════
+       LEFT PANEL: CO₂ CALCULATOR (index11.html)
+       ═══════════════════════════════════════════ -->
+  <div class="panel">
+    <span class="panel-label calc">⚗️ Panel 1 — CO₂ Calculator</span>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <!-- SCOPE 1 INPUTS -->
+    <div class="form-section">
+      <div class="section-title">Scope 1 — Process & Fuel Emissions</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="label-with-unit">Clinker Factor (CF) <span class="unit">%</span></label>
+          <input type="number" id="cf" placeholder="e.g., 70" min="0" step="0.01">
+          <div class="error-message" id="cfError"></div>
+          <p class="info-text">Ratio of clinker to cement produced</p>
+        </div>
+        <div class="form-group">
+          <label class="label-with-unit">Specific Thermal Energy (ST) <span class="unit">MJ/ton clinker</span></label>
+          <input type="number" id="st" placeholder="e.g., 3300" min="0" step="0.01">
+          <div class="error-message" id="stError"></div>
+          <p class="info-text">Heat consumption in production</p>
+        </div>
+        <div class="form-group">
+          <label class="label-with-unit">TSR Biomass (BM) <span class="unit">%</span></label>
+          <input type="number" id="bm" placeholder="e.g., 10" min="0" max="100" step="0.01">
+          <div class="error-message" id="bmError"></div>
+          <p class="info-text">Biomass thermal substitution rate</p>
+        </div>
+        <div class="form-group">
+          <label class="label-with-unit">TSR Alternative Fuel (AF) <span class="unit">%</span></label>
+          <input type="number" id="af" placeholder="e.g., 10" min="0" max="100" step="0.01">
+          <div class="error-message" id="afError"></div>
+          <p class="info-text">Alternative fuel thermal substitution rate</p>
+        </div>
+      </div>
+
+      <!-- Calcination Factor Selection -->
+      <div class="form-group">
+        <label>Calcination Factor Selection</label>
+        <div class="button-group">
+          <button class="btn-toggle active" id="btnCalfDefault">Use Default (530 kg CO₂/ton Clink)</button>
+          <button class="btn-toggle" id="btnCalfCalculated">Calculate from Clinker &amp; Alt Raw Materials</button>
+          <button class="btn-toggle" id="btnCalfManual">✏️ Manual Entry</button>
+        </div>
+        <p id="calfPreviewInline" class="calf-preview-inline">Calcination Factor: <span id="calfPreviewValue">530</span> kg CO₂/ton clinker</p>
+      </div>
+
+      <!-- Manual CalF input -->
+      <div id="manualCalfBox" class="manual-calf-box">
+        <label for="manualCalfInput">Enter Calcination Factor:</label>
+        <input type="number" id="manualCalfInput" placeholder="e.g., 520" min="0" max="1000" step="0.1">
+        <span class="unit">kg CO₂/ton clinker</span>
+        <span class="manual-calf-preview" id="manualCalfFeedback"></span>
+      </div>
+
+      <!-- Calcination Factor Calculated Inputs -->
+      <div id="calfCalculatedInputs" style="display:none;margin-top:12px;">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="label-with-unit">CaO in Clinker <span class="unit">%</span></label>
+            <input type="number" id="caoClinik" placeholder="e.g., 65" min="0" max="100" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="label-with-unit">MgO in Clinker <span class="unit">%</span></label>
+            <input type="number" id="mgoClinik" placeholder="e.g., 2" min="0" max="100" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="label-with-unit">CaO in Alt. Raw Material <span class="unit">%</span></label>
+            <input type="number" id="caoAR" placeholder="e.g., 40" min="0" max="100" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="label-with-unit">MgO in AR <span class="unit">%</span></label>
+            <input type="number" id="mgoAR" placeholder="e.g., 5" min="0" max="100" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="label-with-unit">Quantity/Proportion of AR <span class="unit">%</span></label>
+            <input type="number" id="quantityAR" placeholder="e.g., 10" min="0" max="100" step="0.01">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCOPE 2 TOGGLE -->
+    <div class="scope2-toggle">
+      <label for="scope2Toggle" style="margin:0;"><strong>Include Scope 2 (Electricity)</strong></label>
+      <button class="btn-toggle" id="scope2Toggle">Enable Scope 2</button>
+    </div>
+
+    <!-- SCOPE 2 INPUTS -->
+    <div id="scope2Inputs" class="scope2-inputs">
+      <div class="form-section">
+        <div class="section-title">Scope 2 — Electricity Emissions</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="label-with-unit">SEC Cement Total (PLN+CPP+Renewable) <span class="unit">kWh/ton cement</span></label>
+            <input type="number" id="secCemPLN" placeholder="e.g., 120" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="label-with-unit">SEC Cement from Renewable <span class="unit">kWh/ton cement</span></label>
+            <input type="number" id="secCemRen" placeholder="e.g., 30" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="label-with-unit">SEC Clinker Total (PLN+CPP+Renewable) <span class="unit">kWh/ton clinker</span></label>
+            <input type="number" id="secClinkPLN" placeholder="e.g., 60" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="label-with-unit">SEC Clinker from Renewable <span class="unit">kWh/ton clinker</span></label>
+            <input type="number" id="secClinkRen" placeholder="e.g., 10" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="label-with-unit">PLN Grid/mix CPP Electricity Emissions <span class="unit">ton CO₂/MWh</span></label>
+            <input type="number" id="gridCO2" placeholder="0.87" value="0.87" min="0" step="0.01">
+            <p class="info-text">Default: 0.87 (Indonesia Jamali PLN average)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUTTONS -->
+    <div class="button-group">
+      <button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
+      <button class="copy-btn" id="copyBtn" style="flex:1;padding:9px 18px;font-size:13px;border-radius:6px;margin-top:0;">📋 Copy Results</button>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="resultsSection" class="results-section">
+      <div class="section-title">
+        📈 Results
+        <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+      </div>
+      <div class="results-grid">
+        <div class="result-box" id="boxCalF">
+          <div class="result-label">Calcination Factor</div>
+          <div class="result-value" id="resultCalF">—</div>
+          <div class="result-unit">kg CO₂/ton clinker</div>
+        </div>
+        <div class="result-box" id="boxGrossCem">
+          <div class="result-label">Gross CO₂ Cement (Scope 1)</div>
+          <div class="result-value" id="resultGrossCO2Cem">—</div>
+          <div class="result-unit">kg CO₂/ton cement</div>
+          <div class="benchmark-table">
+            <div class="benchmark-title">📌 Benchmarks (kg CO₂/ton cement)</div>
+            <div class="benchmark-row">
+              <span class="benchmark-name">Roadmap NZ Kemenperin-ITB-ASI</span>
+              <span class="benchmark-values">
+                <span class="bv-chip neutral" id="bm-grosscem-1">585 <span class="bv-year">'25</span></span>
+                <span class="bv-chip neutral" id="bm-grosscem-2">569 <span class="bv-year">'30</span></span>
+              </span>
+            </div>
+            <div class="benchmark-row">
+              <span class="benchmark-name">SBTi</span>
+              <span class="benchmark-values">
+                <span class="bv-chip neutral" id="bm-grosscem-3">497 <span class="bv-year">'28</span></span>
+                <span class="bv-chip neutral" id="bm-grosscem-4">471 <span class="bv-year">'30</span></span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="result-box" id="boxNetCem">
+          <div class="result-label">Net CO₂ Cement (Scope 1)</div>
+          <div class="result-value" id="resultNetCO2Cem">—</div>
+          <div class="result-unit">kg CO₂/ton cement</div>
+          <div class="benchmark-table">
+            <div class="benchmark-title">📌 Benchmarks (kg CO₂/ton cement)</div>
+            <div class="benchmark-row">
+              <span class="benchmark-name">Roadmap NZ Kemenperin-ITB-ASI</span>
+              <span class="benchmark-values">
+                <span class="bv-chip neutral" id="bm-netcem-1">572 <span class="bv-year">'25</span></span>
+                <span class="bv-chip neutral" id="bm-netcem-2">541 <span class="bv-year">'30</span></span>
+              </span>
+            </div>
+            <div class="benchmark-row">
+              <span class="benchmark-name">Sust. Link Loan</span>
+              <span class="benchmark-values">
+                <span class="bv-chip neutral" id="bm-netcem-3">559 <span class="bv-year">'26</span></span>
+                <span class="bv-chip neutral" id="bm-netcem-4">552 <span class="bv-year">'27</span></span>
+                <span class="bv-chip neutral" id="bm-netcem-5">545 <span class="bv-year">'28</span></span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="result-box" id="boxGrossClink">
+          <div class="result-label">Gross CO₂ Clinker (Scope 1)</div>
+          <div class="result-value" id="resultGrossCO2Clink">—</div>
+          <div class="result-unit">kg CO₂/ton clinker</div>
+          <div class="benchmark-table">
+            <div class="benchmark-title">📌 Benchmarks (kg CO₂/ton clinker)</div>
+            <div class="benchmark-row">
+              <span class="benchmark-name">CBAM Australia estimation</span>
+              <span class="benchmark-values">
+                <span class="bv-chip neutral" id="bm-grossclink-1">723 <span class="bv-year">'27</span></span>
+                <span class="bv-chip neutral" id="bm-grossclink-2">688 <span class="bv-year">'28</span></span>
+                <span class="bv-chip neutral" id="bm-grossclink-3">654 <span class="bv-year">'29</span></span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="result-box" id="boxNetClink">
+          <div class="result-label">Net CO₂ Clinker (Scope 1)</div>
+          <div class="result-value" id="resultNetCO2Clink">—</div>
+          <div class="result-unit">kg CO₂/ton clinker</div>
+        </div>
+      </div>
+
+      <!-- Scope 2 Results -->
+      <div id="scope2Results" style="display:none;">
+        <div class="section-title" style="margin-top:20px;">Plus Scope 2 — Electricity Emissions</div>
+        <div class="results-grid">
+          <div class="result-box">
+            <div class="result-label">Gross CO₂ Cement (Scope 1+2)</div>
+            <div class="result-value" id="resultGrossCO2CemScope2">—</div>
+            <div class="result-unit">kg CO₂/ton cement</div>
+            <div class="benchmark-table">
+              <div class="benchmark-title">📌 Benchmarks</div>
+              <div class="benchmark-row">
+                <span class="benchmark-name">Roadmap NZ Kemenperin-ITB-ASI & TKBI</span>
+                <span class="benchmark-values">
+                  <span class="bv-chip neutral" id="bm-grosscem12-1">651 <span class="bv-year">'25</span></span>
+                  <span class="bv-chip neutral" id="bm-grosscem12-2">629 <span class="bv-year">'30</span></span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="result-box">
+            <div class="result-label">Net CO₂ Cement (Scope 1+2)</div>
+            <div class="result-value" id="resultNetCO2CemScope2">—</div>
+            <div class="result-unit">kg CO₂/ton cement</div>
+          </div>
+          <div class="result-box">
+            <div class="result-label">Gross CO₂ Clinker (Scope 1+2)</div>
+            <div class="result-value" id="resultGrossCO2ClinkScope2">—</div>
+            <div class="result-unit">kg CO₂/ton clinker</div>
+            <div class="benchmark-table">
+              <div class="benchmark-title">📌 Benchmarks</div>
+              <div class="benchmark-row">
+                <span class="benchmark-name">Roadmap NZ Kemenperin-ITB-ASI & TKBI</span>
+                <span class="benchmark-values">
+                  <span class="bv-chip neutral" id="bm-grossclink12-1">919 <span class="bv-year">'25</span></span>
+                  <span class="bv-chip neutral" id="bm-grossclink12-2">895 <span class="bv-year">'30</span></span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="result-box">
+            <div class="result-label">Net CO₂ Clinker (Scope 1+2)</div>
+            <div class="result-value" id="resultNetCO2ClinkScope2">—</div>
+            <div class="result-unit">kg CO₂/ton clinker</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- end left panel -->
+
+
+  <!-- ═══════════════════════════════════════════
+       RIGHT PANEL: CBAM SIMULATOR (index.html)
+       ═══════════════════════════════════════════ -->
+  <div class="panel">
+    <span class="panel-label cbam">🇦🇺 Panel 2 — Simulasi CBAM Australia</span>
+
+    <!-- AUTO-FEED NOTICE -->
+    <div class="auto-feed-notice inactive" id="autoFeedNotice">
+      ⚡ <span id="autoFeedText">Isi data di Panel 1 agar Emisi Intensitas Impor terisi otomatis berdasarkan Jenis Produk.</span>
+    </div>
+
+    <!-- FORMULA BOX -->
+    <div class="formula-box">
+      <h3>Formula CBAM Australia (Proposed – Safeguard Mechanism Mirror)</h3>
+      <div class="formula-main">
+        <span class="var">CBAM Liability</span> <span class="op">=</span>
+        (<span class="var">EI_import</span> <span class="op">−</span> <span class="var">Benchmark_SM(t)</span>)
+        <span class="op">×</span> <span class="var">Volume</span>
+        <span class="op">×</span> <span class="var">Carbon_Price_Gap</span><br>
+        <span class="op">Benchmark_SM(t)</span> <span class="op">=</span>
+        <span class="var">EI_base_2024</span> <span class="op">×</span> (1 <span class="op">−</span> 0.049)<sup>t</sup>
+        <span class="op">&nbsp;← ERC</span>
+      </div>
+      <div class="formula-note">
+        Benchmark <strong style="color:#1e293b">2024</strong>: Klinker = <strong style="color:#1e293b">841 kgCO₂e/t</strong> · Semen = <strong style="color:#1e293b">708 kgCO₂e/t</strong> ·
+        Penurunan 4,9%/tahun mulai <strong style="color:#1e293b">2025</strong>
+      </div>
+    </div>
+
+    <!-- PARAMETER CARDS -->
+    <div class="cbam-section-title">Parameter Produk & Emisi</div>
+    <div class="grid-2" style="margin-bottom:14px;">
+      <div class="card">
+        <div class="card-title">Produk & Emisi</div>
+        <div class="ctrl-row">
+          <div class="ctrl-item">
+            <div class="ctrl-label">Jenis Produk</div>
+            <select id="sel-prod" onchange="onProdChange()">
+              <option value="clinker">Klinker (Clinker)</option>
+              <option value="cement">Semen (Cement)</option>
+            </select>
+          </div>
+          <div class="ctrl-item">
+            <div class="ctrl-label">Emisi Intensitas Impor (kgCO₂e/ton)</div>
+            <input type="number" class="input-field" id="inp-ei" min="500" max="1200" step="1" value="900" oninput="cbamUpdate()">
+            <div class="input-unit" id="ei-hint">Klinker ≈ 820–950 · Semen ≈ 650–800 kgCO₂e/ton</div>
+          </div>
+          <div class="ctrl-item">
+            <div class="ctrl-label">Volume Impor (ribu ton/tahun)</div>
+            <input type="number" class="input-field" id="inp-vol" min="1" max="50000" step="1" value="1000" oninput="cbamUpdate()">
+            <div class="input-unit">Satuan: ribu ton (kt) per tahun</div>
+          </div>
+          <div class="ctrl-item">
+            <div class="ctrl-label">Skenario Benchmark 2023-24</div>
+            <select id="sel-bench" onchange="cbamUpdate()">
+              <option value="best">Best Practice (klinker: 790 · semen: 660 kgCO₂e/t)</option>
+              <option value="default" selected>SM Industry Average 2024 (klinker: 841 · semen: 708 kgCO₂e/t)</option>
+              <option value="facility">Facility-specific (klinker: 880 · semen: 750 kgCO₂e/t)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Harga Karbon & Skenario</div>
+        <div class="ctrl-row">
+          <div class="ctrl-item">
+            <div class="ctrl-label">Harga Karbon Australia (AUD/tCO₂e)</div>
+            <input type="number" class="input-field" id="inp-aud" min="0" max="500" step="1" value="40" oninput="cbamUpdate()">
+            <div class="input-unit">Harga karbon efektif di Australia (AUD per tCO₂e)</div>
+          </div>
+          <div class="ctrl-item">
+            <div class="ctrl-label">Biaya Karbon di Negara Asal (AUD/tCO₂e)</div>
+            <input type="number" class="input-field" id="inp-origin-cp" min="0" max="500" step="0.01" value="0" oninput="cbamUpdate()">
+            <div class="input-unit">Biaya karbon yang sudah dibayar di negara asal</div>
+          </div>
+          <div class="ctrl-item">
+            <div class="ctrl-label">Kurs AUD/USD</div>
+            <input type="number" class="input-field" id="inp-fx" min="0.01" max="10" step="0.0001" value="0.65" oninput="cbamUpdate()">
+            <div class="input-unit">Nilai tukar AUD terhadap USD</div>
+          </div>
+          <div class="ctrl-item">
+            <div class="ctrl-label">Tahun Proyeksi</div>
+            <input type="number" class="input-field" id="inp-yr" min="2024" max="2050" step="1" value="2027" oninput="cbamUpdate()">
+            <div class="input-unit">Tahun yang ingin disimulasikan (2024–2050)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI METRICS -->
+    <div class="grid-4" id="kpi-row"></div>
+
+    <!-- FORMULA STEPS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-formula', this)">🧮 Langkah Formula</button>
+    </div>
+    <div id="tab-formula" class="tab-content active">
+      <div class="card">
+        <div class="card-title">Perhitungan Langkah demi Langkah – Tahun Dipilih</div>
+        <div id="step-detail"></div>
+      </div>
+    </div>
+
+  </div><!-- end right panel -->
+
+</div><!-- end panels -->
+
+
+<script>
+// ═══════════════════════════════════════
+// SHARED STATE
+// ═══════════════════════════════════════
+// Computed gross values from calculator
+let _grossCO2Cem   = null; // kg CO₂/ton cement
+let _grossCO2Clink = null; // kg CO₂/ton clinker
+
+// ═══════════════════════════════════════
+// CO₂ CALCULATOR (Panel 1)
+// ═══════════════════════════════════════
+const cfInput   = document.getElementById('cf');
+const stInput   = document.getElementById('st');
+const bmInput   = document.getElementById('bm');
+const afInput   = document.getElementById('af');
+const resetBtn  = document.getElementById('resetBtn');
+const errorBox  = document.getElementById('errorBox');
+const copyBtn   = document.getElementById('copyBtn');
+
+const btnCalfDefault    = document.getElementById('btnCalfDefault');
+const btnCalfCalculated = document.getElementById('btnCalfCalculated');
+const btnCalfManual     = document.getElementById('btnCalfManual');
+const calfCalculatedInputs = document.getElementById('calfCalculatedInputs');
+const manualCalfBox     = document.getElementById('manualCalfBox');
+const manualCalfInput   = document.getElementById('manualCalfInput');
+const manualCalfFeedback= document.getElementById('manualCalfFeedback');
+const calfPreviewValue  = document.getElementById('calfPreviewValue');
+
+const scope2Toggle  = document.getElementById('scope2Toggle');
+const scope2Inputs  = document.getElementById('scope2Inputs');
+const scope2Results = document.getElementById('scope2Results');
+
+const resultCalF            = document.getElementById('resultCalF');
+const resultGrossCO2Cem     = document.getElementById('resultGrossCO2Cem');
+const resultNetCO2Cem       = document.getElementById('resultNetCO2Cem');
+const resultGrossCO2Clink   = document.getElementById('resultGrossCO2Clink');
+const resultNetCO2Clink     = document.getElementById('resultNetCO2Clink');
+const resultGrossCO2CemScope2   = document.getElementById('resultGrossCO2CemScope2');
+const resultNetCO2CemScope2     = document.getElementById('resultNetCO2CemScope2');
+const resultGrossCO2ClinkScope2 = document.getElementById('resultGrossCO2ClinkScope2');
+const resultNetCO2ClinkScope2   = document.getElementById('resultNetCO2ClinkScope2');
+
+let calfMode    = 'default';
+let includeScope2 = false;
+
+function setCalfMode(mode) {
+  calfMode = mode;
+  btnCalfDefault.classList.toggle('active', mode === 'default');
+  btnCalfCalculated.classList.toggle('active', mode === 'calculated');
+  btnCalfManual.classList.remove('active', 'manual-active');
+  if (mode === 'manual') btnCalfManual.classList.add('manual-active');
+  calfCalculatedInputs.style.display = (mode === 'calculated') ? 'block' : 'none';
+  manualCalfBox.classList.toggle('show', mode === 'manual');
+  runCalc();
+}
+
+btnCalfDefault.addEventListener('click',    () => setCalfMode('default'));
+btnCalfCalculated.addEventListener('click', () => setCalfMode('calculated'));
+btnCalfManual.addEventListener('click',     () => setCalfMode('manual'));
+
+scope2Toggle.addEventListener('click', () => {
+  includeScope2 = !includeScope2;
+  scope2Toggle.classList.toggle('active', includeScope2);
+  scope2Inputs.classList.toggle('show', includeScope2);
+  scope2Results.style.display = includeScope2 ? 'block' : 'none';
+  runCalc();
+});
+
+function calculateCalF() {
+  if (calfMode === 'default') return 530;
+  if (calfMode === 'manual') {
+    const v = parseFloat(manualCalfInput.value);
+    return (!isNaN(v) && v >= 0) ? v : null;
+  }
+  // 'calculated'
+  const caoClinik  = parseFloat(document.getElementById('caoClinik').value)  || 0;
+  const mgoClinik  = parseFloat(document.getElementById('mgoClinik').value)  || 0;
+  const caoAR      = parseFloat(document.getElementById('caoAR').value)      || 0;
+  const mgoAR      = parseFloat(document.getElementById('mgoAR').value)      || 0;
+  const quantityAR = parseFloat(document.getElementById('quantityAR').value) || 0;
+  const term1 = (caoClinik / 100 * 0.64516 / 56.1 * 44) + (mgoClinik / 100 * 0.64516 / 40.3 * 44);
+  const term2 = (caoAR / 100 * quantityAR / 100 / 56.1 * 44) + (mgoAR / 100 * quantityAR / 100 / 40.3 * 44);
+  const calF = ((term1 - term2) / 0.64516) * 1000;
+  return Math.max(calF, 0);
+}
+
+function fmt(n) { return isNaN(n) ? '—' : n.toFixed(1); }
+
+function markStale(stale) {
+  ['boxCalF','boxGrossCem','boxNetCem','boxGrossClink','boxNetClink'].forEach(id => {
+    document.getElementById(id).classList.toggle('stale', stale);
+  });
+  if (stale) {
+    document.querySelectorAll('.bv-chip').forEach(el => el.className = 'bv-chip neutral');
+  }
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.classList.add('show'); }
+}
+
+function clearErrors() {
+  document.querySelectorAll('.error-message').forEach(el => { el.classList.remove('show'); el.textContent = ''; });
+  document.querySelectorAll('input[type="number"]').forEach(el => el.classList.remove('error'));
+  errorBox.classList.remove('show'); errorBox.textContent = '';
+}
+
+function colorChips(resultValue, pairs) {
+  pairs.forEach(([id, target]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (isNaN(resultValue)) { el.className = 'bv-chip neutral'; }
+    else if (resultValue <= target) { el.className = 'bv-chip below'; }
+    else { el.className = 'bv-chip above'; }
+  });
+}
+
+// ── AUTO-FEED: push gross CO₂ values to CBAM panel ──
+function pushToCBAM(grossCem, grossClink) {
+  _grossCO2Cem   = (!isNaN(grossCem))   ? grossCem   : null;
+  _grossCO2Clink = (!isNaN(grossClink)) ? grossClink : null;
+  applyAutoFeed();
+}
+
+function applyAutoFeed() {
+  const prod = document.getElementById('sel-prod').value; // 'clinker' or 'cement'
+  const eiInput = document.getElementById('inp-ei');
+  const notice  = document.getElementById('autoFeedNotice');
+  const noticeText = document.getElementById('autoFeedText');
+
+  let val = null;
+  let label = '';
+
+  if (prod === 'clinker' && _grossCO2Clink !== null) {
+    val = _grossCO2Clink;
+    label = `Gross CO₂ Clinker = <span class="auto-feed-value">${val.toFixed(1)} kgCO₂/ton</span> → digunakan sebagai EI Impor Klinker`;
+  } else if (prod === 'cement' && _grossCO2Cem !== null) {
+    val = _grossCO2Cem;
+    label = `Gross CO₂ Semen = <span class="auto-feed-value">${val.toFixed(1)} kgCO₂/ton</span> → digunakan sebagai EI Impor Semen`;
+  }
+
+  if (val !== null) {
+    eiInput.value = val.toFixed(1);
+    eiInput.classList.add('auto-filled');
+    notice.classList.remove('inactive');
+    noticeText.innerHTML = '✅ Auto-filled dari Panel 1: ' + label;
+  } else {
+    eiInput.classList.remove('auto-filled');
+    notice.classList.add('inactive');
+    if (_grossCO2Cem === null && _grossCO2Clink === null) {
+      noticeText.innerHTML = 'Isi data di Panel 1 agar Emisi Intensitas Impor terisi otomatis berdasarkan Jenis Produk.';
+    } else {
+      noticeText.innerHTML = `⚠ Data Panel 1 tersedia (${prod === 'clinker' ? 'Klinker' : 'Semen'}), tapi belum dihitung. Lengkapi input CF & ST.`;
+    }
+  }
+
+  cbamUpdate();
+}
+
+function onProdChange() {
+  applyAutoFeed();
+}
+
+function runCalc() {
+  clearErrors();
+
+  const cf = parseFloat(cfInput.value);
+  const st = parseFloat(stInput.value);
+  const bm = parseFloat(bmInput.value);
+  const af = parseFloat(afInput.value);
+
+  if (cfInput.value === '' && stInput.value === '') {
+    [resultCalF, resultGrossCO2Cem, resultNetCO2Cem,
+     resultGrossCO2Clink, resultNetCO2Clink].forEach(el => el.textContent = '—');
+    markStale(false);
+    calfPreviewValue.textContent = '—';
+    // Clear stored values and update CBAM
+    pushToCBAM(NaN, NaN);
+    return;
+  }
+
+  let valid = true;
+  if (isNaN(cf) || cf <= 0 || cf > 100) {
+    if (cfInput.value !== '') { showError('cfError', 'Must be 0–100 %'); cfInput.classList.add('error'); valid = false; }
+  }
+  if (isNaN(st) || st < 0) {
+    if (stInput.value !== '') { showError('stError', 'Must be ≥ 0'); stInput.classList.add('error'); valid = false; }
+  }
+  const bmVal = isNaN(bm) ? 0 : bm;
+  const afVal = isNaN(af) ? 0 : af;
+  if (bmVal + afVal > 100) { showError('bmError', 'BM + AF cannot exceed 100 %'); valid = false; }
+
+  const calF = calculateCalF();
+
+  if (calF !== null && !isNaN(calF)) {
+    calfPreviewValue.textContent = calF.toFixed(1);
+    if (calfMode === 'manual') manualCalfFeedback.textContent = `→ Using ${calF.toFixed(1)} kg CO₂/ton clinker`;
+  } else {
+    calfPreviewValue.textContent = calfMode === 'manual' ? '(enter value)' : '—';
+    if (calfMode === 'manual') manualCalfFeedback.textContent = 'Enter a value above';
+  }
+
+  resultCalF.textContent = (calF !== null && !isNaN(calF)) ? calF.toFixed(1) : '—';
+
+  if (!valid || isNaN(cf) || cf <= 0 || isNaN(st) || calF === null || isNaN(calF)) {
+    markStale(true);
+    pushToCBAM(NaN, NaN);
+    return;
+  }
+
+  markStale(false);
+
+  const fuelEmission = ((afVal / 100 * st) * 80.9 / 1000000 + ((100 - bmVal - afVal) / 100 * st) * 96 / 1000000) * (1 + 0.012);
+  const emissionFactor = calF / 1000 + 1.55 * 0.2 / 100 * 3.664;
+  const totalEmission  = fuelEmission + emissionFactor;
+
+  const grossCO2Cem   = (totalEmission) / (1 / cf * 100) * 1000;
+  const netCO2Cem     = (((100 - bmVal - afVal) / 100 * st) * 96 / 1000000 * (1 + 0.012) + emissionFactor) / (1 / cf * 100) * 1000;
+  const grossCO2Clink = totalEmission * 1000;
+  const netCO2Clink   = (((100 - bmVal - afVal) / 100 * st) * 96 / 1000000 * (1 + 0.012) + emissionFactor) * 1000;
+
+  resultGrossCO2Cem.textContent   = fmt(grossCO2Cem);
+  resultNetCO2Cem.textContent     = fmt(netCO2Cem);
+  resultGrossCO2Clink.textContent = fmt(grossCO2Clink);
+  resultNetCO2Clink.textContent   = fmt(netCO2Clink);
+
+  colorChips(grossCO2Cem, [['bm-grosscem-1',585],['bm-grosscem-2',569],['bm-grosscem-3',497],['bm-grosscem-4',471]]);
+  colorChips(netCO2Cem,   [['bm-netcem-1',572],['bm-netcem-2',541],['bm-netcem-3',559],['bm-netcem-4',552],['bm-netcem-5',545]]);
+  colorChips(grossCO2Clink, [['bm-grossclink-1',723],['bm-grossclink-2',688],['bm-grossclink-3',654]]);
+
+  if (includeScope2) {
+    const secCemPLN  = parseFloat(document.getElementById('secCemPLN').value)  || 0;
+    const secCemRen  = parseFloat(document.getElementById('secCemRen').value)  || 0;
+    const secClinkPLN= parseFloat(document.getElementById('secClinkPLN').value)|| 0;
+    const secClinkRen= parseFloat(document.getElementById('secClinkRen').value)|| 0;
+    const gridCO2   = parseFloat(document.getElementById('gridCO2').value)    || 0.87;
+    const scope2CO2Cem   = (secCemPLN   - secCemRen)  * gridCO2;
+    const scope2CO2Clink = (secClinkPLN - secClinkRen) * gridCO2;
+    resultGrossCO2CemScope2.textContent   = fmt(grossCO2Cem   + scope2CO2Cem);
+    resultNetCO2CemScope2.textContent     = fmt(netCO2Cem     + scope2CO2Cem);
+    resultGrossCO2ClinkScope2.textContent = fmt(grossCO2Clink + scope2CO2Clink);
+    resultNetCO2ClinkScope2.textContent   = fmt(netCO2Clink   + scope2CO2Clink);
+    colorChips(grossCO2Cem + scope2CO2Cem, [['bm-grosscem12-1',651],['bm-grosscem12-2',629]]);
+    colorChips(grossCO2Clink + scope2CO2Clink, [['bm-grossclink12-1',919],['bm-grossclink12-2',895]]);
+  }
+
+  // ── Push computed gross values to CBAM ──
+  pushToCBAM(grossCO2Cem, grossCO2Clink);
+}
+
+function reset() {
+  [cfInput, stInput, bmInput, afInput, manualCalfInput,
+   document.getElementById('secCemPLN'), document.getElementById('secCemRen'),
+   document.getElementById('secClinkPLN'), document.getElementById('secClinkRen'),
+   document.getElementById('caoClinik'), document.getElementById('mgoClinik'),
+   document.getElementById('caoAR'), document.getElementById('mgoAR'),
+   document.getElementById('quantityAR')
+  ].forEach(el => el && (el.value = ''));
+  document.getElementById('gridCO2').value = '0.87';
+  includeScope2 = false;
+  scope2Toggle.classList.remove('active');
+  scope2Inputs.classList.remove('show');
+  scope2Results.style.display = 'none';
+  setCalfMode('default');
+  clearErrors();
+  runCalc();
+}
+
+function copyResultsToClipboard() {
+  const results = {
+    "Calcination Factor (kg CO₂/ton clinker)": resultCalF.textContent,
+    "Gross CO₂ Cement Scope 1 (kg CO₂/ton cement)": resultGrossCO2Cem.textContent,
+    "Net CO₂ Cement Scope 1 (kg CO₂/ton cement)": resultNetCO2Cem.textContent,
+    "Gross CO₂ Clinker Scope 1 (kg CO₂/ton clinker)": resultGrossCO2Clink.textContent,
+    "Net CO₂ Clinker Scope 1 (kg CO₂/ton clinker)": resultNetCO2Clink.textContent,
+  };
+  if (includeScope2) {
+    results["Gross CO₂ Cement Scope 1+2"]  = resultGrossCO2CemScope2.textContent;
+    results["Net CO₂ Cement Scope 1+2"]    = resultNetCO2CemScope2.textContent;
+    results["Gross CO₂ Clinker Scope 1+2"] = resultGrossCO2ClinkScope2.textContent;
+    results["Net CO₂ Clinker Scope 1+2"]   = resultNetCO2ClinkScope2.textContent;
+  }
+  const text = Object.entries(results).map(([k,v]) => `${k}: ${v}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    copyBtn.textContent = '✅ Copied!'; copyBtn.classList.add('copied');
+    setTimeout(() => { copyBtn.textContent = '📋 Copy Results'; copyBtn.classList.remove('copied'); }, 2000);
+  }).catch(() => alert('Failed to copy to clipboard'));
+}
+
+const allCalcInputs = document.querySelectorAll('#cf,#st,#bm,#af,#manualCalfInput,#caoClinik,#mgoClinik,#caoAR,#mgoAR,#quantityAR,#secCemPLN,#secCemRen,#secClinkPLN,#secClinkRen,#gridCO2');
+allCalcInputs.forEach(inp => inp.addEventListener('input', runCalc));
+resetBtn.addEventListener('click', reset);
+copyBtn.addEventListener('click', copyResultsToClipboard);
+
+
+// ═══════════════════════════════════════
+// CBAM SIMULATOR (Panel 2)
+// ═══════════════════════════════════════
+const PRODUCTS = {
+  clinker: {
+    label: 'Klinker',
+    ei_base: { best: 0.790, default: 0.841, facility: 0.880 },
+    ei_import_default: 0.90,
+    bench_label: { best: '0.790 tCO₂e/t (best practice)', default: '0.841 tCO₂e/t (SM 2024)', facility: '0.880 tCO₂e/t (facility-specific)' }
+  },
+  cement: {
+    label: 'Semen',
+    ei_base: { best: 0.660, default: 0.708, facility: 0.750 },
+    ei_import_default: 0.75,
+    bench_label: { best: '0.660 tCO₂e/t (best practice)', default: '0.708 tCO₂e/t (SM 2024)', facility: '0.750 tCO₂e/t (facility-specific)' }
+  }
+};
+
+const DECLINE   = 0.049;
+const BASE_YEAR = 2024;
+
+function getCbamParams() {
+  const prod = PRODUCTS[document.getElementById('sel-prod').value];
+  const bench = document.getElementById('sel-bench').value;
+  const ei_base = prod.ei_base[bench];
+  const ei_import_kg = parseFloat(document.getElementById('inp-ei').value) || 900;
+  const ei_import = ei_import_kg / 1000;
+  const vol = (parseFloat(document.getElementById('inp-vol').value) || 1000) * 1000;
+  const aud = parseFloat(document.getElementById('inp-aud').value) || 0;
+  const fx  = parseFloat(document.getElementById('inp-fx').value) || 0.65;
+  const yr  = parseInt(document.getElementById('inp-yr').value) || 2027;
+  const origin_cp_aud = parseFloat(document.getElementById('inp-origin-cp').value) || 0;
+  return { prod, ei_base, ei_import, ei_import_kg, vol, aud, fx, yr, origin_cp_aud, bench };
+}
+
+function calcRow(year, p) {
+  const t = Math.max(0, year - BASE_YEAR);
+  const erc = Math.pow(1 - DECLINE, t);
+  const benchmark = p.ei_base * erc;
+  const delta = Math.max(0, p.ei_import - benchmark);
+  const cp_gap = Math.max(0, p.aud - p.origin_cp_aud);
+  const cbam_per_ton = delta * cp_gap;
+  const total_cbam = cbam_per_ton * p.vol / 1e6;
+  return { erc, benchmark, delta, cp_gap, cbam_per_ton, total_cbam, t };
+}
+
+function cbamUpdate() {
+  const p = getCbamParams();
+  const row_yr = calcRow(p.yr, p);
+  const kpis = document.getElementById('kpi-row');
+  kpis.innerHTML = `
+    <div class="metric-card highlight">
+      <div class="metric-label">CBAM per Ton (Thn ${p.yr})</div>
+      <div class="metric-value">AUD ${row_yr.cbam_per_ton.toFixed(2)}</div>
+      <div class="metric-sub">USD ${(row_yr.cbam_per_ton * p.fx).toFixed(2)}/ton</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Benchmark SM (Thn ${p.yr})</div>
+      <div class="metric-value">${(row_yr.benchmark * 1000).toFixed(1)} kg</div>
+      <div class="metric-sub">CO₂e/t · ERC penurunan ${row_yr.t} thn</div>
+    </div>
+    <div class="metric-card ${row_yr.delta > 0 ? 'warn' : ''}">
+      <div class="metric-label">Selisih Emisi (kgCO₂e/t)</div>
+      <div class="metric-value">${(row_yr.delta * 1000).toFixed(1)}</div>
+      <div class="metric-sub">${row_yr.delta > 0 ? '⚠ Kena CBAM Liability' : '✓ Di bawah benchmark'}</div>
+    </div>
+    <div class="metric-card highlight">
+      <div class="metric-label">Total Liability (${p.yr})</div>
+      <div class="metric-value">AUD ${row_yr.total_cbam.toFixed(2)}M</div>
+      <div class="metric-sub">${(p.vol/1000).toFixed(0)} kt impor/tahun</div>
+    </div>
+  `;
+  renderSteps(p, row_yr);
+}
+
+function renderSteps(p, r) {
+  const bench_name = { best:'Best Practice', default:'SM Industry Average (2024)', facility:'Facility-specific' }[p.bench];
+  document.getElementById('step-detail').innerHTML = `
+    <div class="step-formula">
+      <span class="comment">// Input Parameter</span><br>
+      <span class="step-label">EI_base_2024 (${bench_name})</span> = <span class="step-val">${(p.ei_base*1000).toFixed(1)} kgCO₂e/t</span> &nbsp;<span class="comment">← Benchmark SM 2024</span><br>
+      <span class="step-label">EI_import</span> = <span class="step-val">${p.ei_import_kg.toFixed(0)} kgCO₂e/t</span> = ${p.ei_import.toFixed(4)} tCO₂e/t<br>
+      <span class="step-label">Volume Impor</span> = <span class="step-val">${(p.vol/1000).toFixed(0)}</span> ribu ton/tahun<br>
+      <span class="step-label">Harga Karbon AU</span> = <span class="step-val">AUD ${p.aud.toFixed(2)}</span>/tCO₂e<br>
+      <span class="step-label">Biaya Karbon Negara Asal</span> = <span class="step-val">AUD ${p.origin_cp_aud.toFixed(2)}</span>/tCO₂e<br>
+      <span class="step-label">Tahun proyeksi</span> = <span class="step-val">${p.yr}</span> → penurunan t = ${p.yr} − 2024 = <span class="step-val">${r.t}</span> tahun
+      ${r.t === 0 ? '<span class="comment"> ← tahun basis, belum ada penurunan</span>' : ''}
+    </div>
+    <div class="step-formula">
+      <span class="comment">// Langkah 1: Hitung ERC (Emissions Reduction Contribution)</span><br>
+      <span class="step-num">ERC</span> = (1 − 0.049)<sup>${r.t}</sup>${r.t === 0 ? ' = 1.00000 (tidak ada penurunan di tahun basis)' : ` = (0.951)<sup>${r.t}</sup> = <span class="step-val">${r.erc.toFixed(5)}</span>`}<br>
+      <span class="comment"> ← penurunan 4,9%/tahun mulai 2025</span>
+    </div>
+    <div class="step-formula">
+      <span class="comment">// Langkah 2: Hitung Benchmark SM tahun ${p.yr}</span><br>
+      <span class="step-num">Benchmark_SM(${p.yr})</span> = EI_base_2024 × ERC<br>
+      = ${(p.ei_base*1000).toFixed(1)} × ${r.erc.toFixed(5)}<br>
+      = <span class="step-val">${(r.benchmark*1000).toFixed(2)} kgCO₂e/t</span> &nbsp;<span class="comment">(= ${r.benchmark.toFixed(5)} tCO₂e/t)</span>
+    </div>
+    <div class="step-formula">
+      <span class="comment">// Langkah 3: Hitung Selisih Emisi (Emission Delta)</span><br>
+      <span class="step-num">ΔEI</span> = max(0, EI_import − Benchmark_SM)<br>
+      = max(0, ${p.ei_import_kg.toFixed(0)} − ${(r.benchmark*1000).toFixed(2)}) kgCO₂e/t<br>
+      = <span class="step-val">${(r.delta*1000).toFixed(2)} kgCO₂e/t</span> = ${r.delta.toFixed(5)} tCO₂e/t
+      ${r.delta <= 0 ? '<br><span class="comment"> ← Tidak kena CBAM (EI impor sudah lebih rendah dari benchmark)</span>' : ''}
+    </div>
+    <div class="step-formula">
+      <span class="comment">// Langkah 4: Hitung Carbon Price Gap</span><br>
+      <span class="step-num">CP_Gap</span> = max(0, Harga_AU − Biaya_Karbon_Asal)<br>
+      = max(0, AUD ${p.aud.toFixed(2)} − AUD ${p.origin_cp_aud.toFixed(2)})<br>
+      = <span class="step-val">AUD ${r.cp_gap.toFixed(2)}</span>/tCO₂e
+    </div>
+    <div class="step-formula">
+      <span class="comment">// Langkah 5: CBAM Liability per Ton</span><br>
+      <span class="step-num">CBAM/ton</span> = ΔEI (tCO₂e/t) × CP_Gap<br>
+      = ${r.delta.toFixed(5)} × AUD ${r.cp_gap.toFixed(2)}<br>
+      = <span class="step-val">AUD ${r.cbam_per_ton.toFixed(4)}</span>/ton impor
+    </div>
+    <div class="step-formula">
+      <span class="comment">// Langkah 6: Total CBAM Liability</span><br>
+      <span class="step-num">Total CBAM</span> = CBAM/ton × Volume<br>
+      = AUD ${r.cbam_per_ton.toFixed(4)} × ${(p.vol/1000).toFixed(0)},000 ton<br>
+      = <span class="step-val">AUD ${r.total_cbam.toFixed(3)} juta</span>/tahun
+      ${r.total_cbam > 0 ? `<br><span class="comment"> ≈ USD ${(r.total_cbam * p.fx).toFixed(3)} juta (kurs AUD/USD ${p.fx.toFixed(4)})</span>` : ''}
+    </div>
+  `;
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Initial render
+runCalc();
+cbamUpdate();
+</script>
+</body>
+</html>
